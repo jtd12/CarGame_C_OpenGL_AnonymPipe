@@ -3,7 +3,9 @@
 
 void initialiseTimer()
 {
+srand((unsigned int)time(0)); // Conversion classique en C
 timer=1000;
+finishedGame=0;
 }
 
 void initialiseCar()
@@ -47,6 +49,7 @@ for(int i=0;i<SIZEAICAR;i++)
  carsAI[i].speed=rand() % 15 + 5;
  carsAI[i].nn=0;
  carsAI[i].points=0;
+ carsAI[i].deviation=0;
  
  for(int j=0;j<COLORCAR;j++)
  {
@@ -83,9 +86,10 @@ carsAI[i].y=0.7f;
 }
 }
 
-void checkPoints(float x,float y,float z,float x2,float y2,float z2)
+
+void checkPoints(float x,float y,float z)
 {
-	float dist=sqrt(x2-x)*(x2-x)+(y2-y)*(y2-y)+(z2-z)*(z2-z);
+	float dist=sqrt(cars[0].x-x)*(cars[0].x-x)+(cars[0].y-y)*(cars[0].y-y)+(cars[0].z-z)*(cars[0].z-z);
 	
 	if(dist<10)
 	{
@@ -93,17 +97,97 @@ void checkPoints(float x,float y,float z,float x2,float y2,float z2)
 	}
 }
 
-void checkPointsAI(float x,float y,float z,float x2,float y2,float z2)
+void checkPointsAI(float x,float y,float z)
 {
-	float dist=sqrt(x2-x)*(x2-x)+(y2-y)*(y2-y)+(z2-z)*(z2-z);
-      for(int i=0;i<SIZEAICAR;i++)
+  for(int i=0;i<SIZEAICAR;i++)
       {
+	float dist=sqrt(carsAI[i].x-x)*(carsAI[i].x-x)+(carsAI[i].y-y)*(carsAI[i].y-y)+(carsAI[i].z-z)*(carsAI[i].z-z);
 	if(dist<10)
 	{
+    
+	
 		carsAI[i].points+=5;
 	}
 	}
 }
+
+
+void drawCheckPoints(float x, float y, float z,float rot,float r,float g,float b)
+{
+glPushMatrix();
+glColor3f(r,g,b);
+glTranslated(x,y,z);
+glRotated(rot,0,0.5,0);
+glScaled(1,1,1);
+glutSolidTeapot(3);
+glPopMatrix();	   	 
+}
+
+void resetCar(char command)
+{
+	
+	
+	if(cars[0].points>=15000)
+	{
+		finishedGame=0;
+	}
+ 
+
+ 
+ 
+ if(command=='E' && timer>0 && finishedGame==1)
+ {
+ 	finishedGame=0;
+ }
+	
+    if( finishedGame==0)
+		 timer-=0.1f;
+		
+  else if(finishedGame==1)
+ {
+
+   timer=800;
+   initialiseCar();
+   setPhysics();
+   
+   }
+  }
+   
+   
+ void resetCarAI(char command)
+ {
+ 
+ 	for(int i=0;i<SIZEAICAR;i++)
+	{
+	if(carsAI[i].points>=15000)
+	{
+		finishedGame=1;
+
+	}
+     }
+      
+ if(command=='E' && timer>0 && finishedGame==1)
+ {
+ 	finishedGame=0;
+ }
+	
+    if( finishedGame==0)
+		 timer-=0.1f;
+		 
+    else if(finishedGame==1)
+ {
+     
+        timer=800;
+        initialiseCarsAI();
+        setPhysicsCarAI();
+
+  	
+  }
+  	
+  	
+
+}
+
 
 int checkCollision(float carMinX,float carMinY,float carMinZ, float carMaxX,float carMaxY,float carMaxZ, float cubeMinX,float cubeMinY,float cubeMinZ, float cubeMaxX,float cubeMaxY,float cubeMaxZ) {
     return (carMinX <= cubeMaxX && carMaxX >= cubeMinX) &&
@@ -122,6 +206,16 @@ void collisionBetweenCar_CARAI()
 {
 for (int i = 0; i < SIZECAR; i++) {
     for (int j = i + 1; j < SIZEAICAR; j++) {
+     if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, 45,0,-50, 50,10,50)==0
+      && (checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -50,0,-50, -45,10,50)==0
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -40,0,50, 40,15,52)==0
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -40,0,-52, 40,15,-50)==0
+      
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, 15,0,-20, 20,10,20)==0
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -20,0,-20, -15,10,20)==0
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -10,0,15, 10,15,20)==0
+      && checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -10,0,-20, 10,15,-15)==0))
+      {
         if (checkCollisionAABB(cars[i].x-2, cars[i].x+2, 
                                cars[i].y-2, cars[i].y+2,
                                cars[i].z-2, cars[i].z+2, 
@@ -133,8 +227,11 @@ for (int i = 0; i < SIZECAR; i++) {
                                cars[i].z-=0.1f;
                                carsAI[j].x+=0.1f;
                                carsAI[j].z+=0.1f;
+                               
+                               cars[i].points-=10;
             // Collision détectée entre car[i] et car[j]
         }
+       }
     }
 }
 }
@@ -154,6 +251,9 @@ for (int i = 0; i < SIZEAICAR; i++) {
                                carsAI[i].z-=0.1f;
                                carsAI[j].x+=0.1f;
                                carsAI[j].z+=0.1f;
+                               
+                               carsAI[i].points-=10;
+                               
             // Collision détectée entre car[i] et car[j]
         }
     }
@@ -164,16 +264,20 @@ void collisionExterior()
 {
    if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, 45,0,-50, 50,10,50)) {
 	    cars[0].x-=5.0f;
+	    cars[0].points-=10;
 	}
 	
  	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -50,0,-50, -45,10,50)) {
 	     cars[0].x-=-5.0f;
+	     cars[0].points-=10;
 	}
 	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -40,0,50, 40,15,52)) {
 	   cars[0].z-=5.0f;
+	   cars[0].points-=10;
 	}
 	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -40,0,-52, 40,15,-50)) {
 	    cars[0].z-=-5.0f;
+	    cars[0].points-=10;
 	}
 	   
 }
@@ -182,16 +286,20 @@ void collisionInterior()
 {
    if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, 15,0,-20, 20,10,20)) {
 	    cars[0].x-=-5.0f;
+	    cars[0].points-=10;
 	}
 	
  	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -20,0,-20, -15,10,20)) {
 	      cars[0].x-=5.0f;
+	      cars[0].points-=10;
 	}
 	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -10,0,15, 10,15,20)) {
 	   cars[0].z-=-5.0f;
+	   cars[0].points-=10;
 	}
 	if(checkCollision(cars[0].x-2,cars[0].y,cars[0].z-2, cars[0].x+2,cars[0].y,cars[0].z+2, -10,0,-20, 10,15,-15)) {
 	    cars[0].z-=5.0f;
+	    cars[0].points-=10;
 	}
 	
   
@@ -203,20 +311,24 @@ for(int i=0;i<SIZEAICAR;i++)
 {
    if(checkCollision(carsAI[i].x-2,carsAI[i].y,cars[0].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, 45,0,-50, 50,10,50)) {
        carsAI[i].x-=5.0f;
+       carsAI[i].points-=10;
       
 	}
 	
  	if(checkCollision(carsAI[i].x-2,carsAI[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -50,0,-50, -45,10,50)) {
 	carsAI[i].x-=-5.0f;
+	carsAI[i].points-=10;
           
 	}
 	if(checkCollision(carsAI[i].x-2,carsAI[i].y,carsAI[i].z-2,carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -40,0,50, 40,15,52)) {
 
           carsAI[i].z-=5.0f;
+          carsAI[i].points-=10;
 	}
 	if(checkCollision(carsAI[i].x-2,carsAI[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -40,0,-52, 40,15,-50)) {
 	
            carsAI[i].z-=-5.0f;
+           carsAI[i].points-=10;
 	}
 }
 	   
@@ -228,16 +340,20 @@ for(int i=0;i<SIZEAICAR;i++)
 {
    if(checkCollision(carsAI[i].x-2,cars[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, 15,0,-20, 20,10,20)) {
 	   carsAI[i].x-=-5.0f;
+	   carsAI[i].points-=10;
 	}
 	
  	if(checkCollision(carsAI[i].x-2,cars[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -20,0,-20, -15,10,20)) {
 	      carsAI[i].x-=5.0f;
+	      carsAI[i].points-=10;
 	}
 	if(checkCollision(carsAI[i].x-2,carsAI[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -10,0,15, 10,15,20)) {
 	  carsAI[i].z-=-5.0f;
+	  carsAI[i].points-=10;
 	}
 	if(checkCollision(carsAI[i].x-2,carsAI[i].y,carsAI[i].z-2, carsAI[i].x+2,carsAI[i].y,carsAI[i].z+2, -10,0,-20, 10,15,-15)) {
 	     carsAI[i].z-=5.0f;
+	     carsAI[i].points-=10;
 	}
 }
   
@@ -302,9 +418,28 @@ for(int i=0;i<SIZEAICAR;i++)
 {
     float tx=points[carsAI[i].nn][0];
     float ty=points[carsAI[i].nn][1];
-    float beta = carsAI[i].rotation-atan2(-ty+carsAI[i].z,tx-carsAI[i].x);
+    
+     if (carsAI[i].deviation == 0) { // Générer la déviation si elle n'est pas encore définie
+            int direction = (rand() % 2 == 0) ? -1 : 1; // -1 = gauche, 1 = droite
+            carsAI[i].deviation = direction * 2.0f;     // Déviation fixe (2 unités, ajustez si nécessaire)
+        }
+
+        // Ajoutez la déviation à la position cible
+        float angleToTarget = atan2(ty - carsAI[i].z, tx - carsAI[i].x);
+        float offsetX = carsAI[i].deviation * cos(angleToTarget + M_PI_2);
+        float offsetY = carsAI[i].deviation * sin(angleToTarget + M_PI_2);
+        
+         float adjustedTx = tx + offsetX;
+         float adjustedTy = ty + offsetY;
+     
+    float beta = carsAI[i].rotation - atan2(-adjustedTy + carsAI[i].z, adjustedTx - carsAI[i].x);
+    
     if (sin(beta)<0) carsAI[i].rotation+=0.005*carsAI[i].speed; else carsAI[i].rotation-=0.005*carsAI[i].speed;
-    if ((carsAI[i].x-tx)*(carsAI[i].x-tx)+(carsAI[i].z-ty)*(carsAI[i].z-ty)<5*5) carsAI[i].nn=(carsAI[i].nn+1)%NUM;
+   
+        
+    if ((carsAI[i].x-tx)*(carsAI[i].x-tx)+(carsAI[i].z-ty)*(carsAI[i].z-ty)<5*5)     
+    carsAI[i].nn=(carsAI[i].nn+1)%NUM;
+    carsAI[i].deviation = 0;  
     }
 }
 

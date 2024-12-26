@@ -9,6 +9,7 @@
  pthread_mutex_t carAIMutex = PTHREAD_MUTEX_INITIALIZER;
  pthread_mutex_t roueAIMutex = PTHREAD_MUTEX_INITIALIZER;
  pthread_mutex_t timerMutex = PTHREAD_MUTEX_INITIALIZER;
+ pthread_mutex_t soundMutex = PTHREAD_MUTEX_INITIALIZER;
    
 int sendCommand2(int pipeFd, void *command,size_t size) {
     if (write(pipeFd, command, size) < 0) {
@@ -37,16 +38,15 @@ void* communicationThread(void* args) {
    	    collisionInterior();
    	    collisionBetweenCar_CARAI();
    	    
-   	    checkPoints(20,1,30,cars[0].x,cars[0].y,cars[0].z);
-   	    checkPoints(40,1,-40,cars[0].x,cars[0].y,cars[0].z);
-   	    checkPoints(-40,1,30,cars[0].x,cars[0].y,cars[0].z);
+   	    checkPoints(20,1,30);
+   	    checkPoints(40,1,-40);
+   	    checkPoints(-40,1,30);
    	    
-   	    for(int i=0;i<SIZEAICAR;i++)
-   	    {
-   	    checkPointsAI(20,1,30,carsAI[i].x,carsAI[i].y,carsAI[i].z);
-   	    checkPointsAI(40,1,-40,carsAI[i].x,carsAI[i].y,carsAI[i].z);
-   	    checkPointsAI(-40,1,30,carsAI[i].x,carsAI[i].y,carsAI[i].z);
-   	    }
+   	    if(cars[0].points<=0)
+   	      cars[0].points=0;
+   	    
+   	    resetCar(command);
+   	    
    	    
             pthread_mutex_unlock(&carMutex);
               } 
@@ -76,6 +76,20 @@ void* communicationThread(void* args) {
    	   	 collisionInteriorCarAI();
    	   	 collisionBetweenCarAI();
    	   	 
+   	  
+	   	    checkPointsAI(20,1,30);
+	   	    checkPointsAI(40,1,-40);
+	   	    checkPointsAI(-40,1,30);
+	   	    
+	   	    for(int i=0;i<SIZEAICAR;i++)
+	   	    {
+	   	    if(carsAI[i].points<=0)
+   	             carsAI[i].points=0;
+   	            }
+	   	    
+	   	    resetCarAI(command);
+   	    
+   	   	 
                 pthread_mutex_unlock(&carAIMutex);
         }
         
@@ -91,6 +105,14 @@ void* communicationThread(void* args) {
 		 timer-=0.01f;
                 pthread_mutex_unlock(&timerMutex);
         }
+        
+         if (read(toServer7[0], &command, sizeof(char)) > 0) {
+          pthread_mutex_lock(&soundMutex);
+      
+         setListener(cars[0].x,cars[0].y,cars[0].z,cars[0].x,cars[0].y,cars[0].z);
+         playSoundWithPosition(sound.sound1,cars[0].x,cars[0].y,cars[0].z,((cars[0].speed-0.1)/(cars[0].speed)+0.5));
+          pthread_mutex_unlock(&soundMutex);
+    }
        
       
 }
@@ -137,6 +159,12 @@ void* gameUpdateThread(void* args) {
             printf("Erreur lors de l'envoi de l'état de la caméra au client." );
         }
                pthread_mutex_unlock(&timerMutex);
+               
+         pthread_mutex_lock(&soundMutex);
+     if (!sendCommand2(toClient7[1], &sound, sizeof(Sound))) {
+            printf("Erreur lors de l'envoi de l'état de la caméra au client." );
+        }
+               pthread_mutex_unlock(&soundMutex);
 }
 
 
@@ -144,7 +172,7 @@ void* gameUpdateThread(void* args) {
 // Fonction serveur
 void serverProcess(int toClient[2],int toServer[2],int toClient2[2],int toServer2[2],
 int toClient3[2],int toServer3[2],int toClient4[2],int toServer4[2],int toClient5[2],int toServer5[2],
-int toClient6[2],int toServer6[2]) {
+int toClient6[2],int toServer6[2],int toClient7[2],int toServer7[2]) {
     close(toClient[0]); // Ferme la lecture côté client
     close(toServer[1]); // Ferme l'écriture côté client
     close(toClient2[0]); // Ferme la lecture côté client
@@ -157,11 +185,24 @@ int toClient6[2],int toServer6[2]) {
     close(toServer5[1]); // Ferme l'écriture côté client
     close(toClient6[0]); // Ferme la lecture côté client
     close(toServer6[1]); // Ferme l'écriture côté client
+    close(toClient7[0]); // Ferme la lecture côté client
+    close(toServer7[1]); // Ferme l'écriture côté client
+    
     
    initialiseCar();
    initialiseCamera();
    initialiseCarsAI();
    initialiseTimer();
+    
+   sound.datas = NULL; // Dynamic array of Data structs
+   sound.datasCount = 0;
+   sound.context = NULL;
+   sound.device = NULL;
+   sound.isBigEndian = 0;
+   sound.sound1=loadSound("data/audio/vehicule.wav");
+
+
+   
 
    char command;
 
@@ -183,12 +224,20 @@ int toClient6[2],int toServer6[2]) {
 
      //  usleep(100); // Pause pour limiter à ~60 FPS
 }
+ 
+    freeSound();
+    
     pthread_mutex_destroy(&carMutex);
     pthread_mutex_destroy(&cameraMutex);
     pthread_mutex_destroy(&roueMutex);
     pthread_mutex_destroy(&carAIMutex);
     pthread_mutex_destroy(&roueAIMutex);
     pthread_mutex_destroy(&timerMutex);
+    pthread_mutex_destroy(&soundMutex);
+ 
 
+    
+  
+ 
 }
 

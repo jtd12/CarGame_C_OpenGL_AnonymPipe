@@ -2,7 +2,8 @@ README!
 
 - Commandes à saisir dans le terminal:
 
-gcc main.c APP_SERVEUR.c APP_CLIENT.c entities/*.c  entities/functions/*.c entities/textures/*.c -lpthread -lGL -lGLU -lglut -lm -o appClientServeurOpenGL.out
+gcc main.c APP_SERVEUR.c APP_CLIENT.c entities/*.c  entities/functions/*.c entities/textures/*.c entities/sound/*.c -lpthread -lGL -lGLU -lglut -lopenal -lm -o appClientServeurOpenGL.out
+
 
 
 - Lancer app:

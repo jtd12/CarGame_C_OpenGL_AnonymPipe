@@ -9,6 +9,7 @@
 #include<time.h>
 #include<math.h>
 #include"functions/functions.h"
+#include"sound/sound.h"
 #define NUM 6
 #define SIZECAR 1
 #define SIZEAICAR 10
@@ -25,6 +26,7 @@ static int points[NUM][2] = {15,30,
                         5,25
                        };
 
+
 					  
 // Structure représentant une voiture
 typedef struct {
@@ -35,6 +37,7 @@ typedef struct {
     int points;
     float rotationLineHUD;
     float colorCarRandomR[COLORCAR],colorCarRandomG[COLORCAR],colorCarRandomB[COLORCAR];
+    int deviation;
 } Car;
 
 Car cars[SIZECAR]; // Une seule voiture pour cet exemple
@@ -42,6 +45,8 @@ Car cars[SIZECAR]; // Une seule voiture pour cet exemple
 Car carsAI[SIZEAICAR];
 
 extern int timer;
+extern int finishedGame;
+extern int rotTeapot;
 
 typedef struct {
     float x, y,z;   // Position
@@ -49,7 +54,6 @@ typedef struct {
     int rot_;
 } Roue;
 
-extern int timer;
 Roue roues[SIZEROUES]; // les roues
 
 Roue rouesAI[SIZEROUESAI]; // les roues
@@ -69,12 +73,15 @@ void collisionInteriorCarAI();
 void collisionExteriorCarAI();
 void collisionBetweenCar_CARAI();
 void collisionBetweenCarAI();
+void resetCar(char command);
+void resetCarAI(char command);
 int checkCollision(float carMinX,float carMinY,float carMinZ, float carMaxX,float carMaxY,float carMaxZ, float cubeMinX,float cubeMinY,float cubeMinZ, float cubeMaxX,float cubeMaxY,float cubeMaxZ);
 int checkCollisionAABB(float x1_min, float x1_max, float y1_min, float y1_max,float z1_min, float z1_max,
                        float x2_min, float x2_max, float y2_min, float y2_max,float z2_min, float z2_max);
 void findTarget();
-void checkPoints(float x,float y,float z,float x2,float y2,float z2);
-void checkPointsAI(float x,float y,float z,float x2,float y2,float z2);
+void drawCheckPoints(float x, float y, float z,float rot,float r,float g,float b);
+void checkPoints(float x,float y,float z);
+void checkPointsAI(float x,float y,float z);
 void rotationRoues(char command,float deltaTime);
 void rotationRouesAI(float deltaTime);
 void drawRoues();

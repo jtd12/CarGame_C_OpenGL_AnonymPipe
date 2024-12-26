@@ -2,7 +2,7 @@
 #define DEF_TUBES_ANONYMES_H
 
 
-// création de 10 Tubes anonymes
+// création de 14 Tubes anonymes
 int toClient[2];
 int toServer[2]; 
 
@@ -20,6 +20,9 @@ int toServer5[2];
 
 int toClient6[2];
 int toServer6[2]; 
+
+int toClient7[2];
+int toServer7[2]; 
 
 
 #endif

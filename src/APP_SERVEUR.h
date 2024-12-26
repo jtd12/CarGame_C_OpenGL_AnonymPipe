@@ -15,7 +15,7 @@ extern pthread_mutex_t roueMutex;
 
 void serverProcess(int toClient[2], int toServer[2],int toClient2[2],int toServer2[2],
 int toClient3[2],int toServer3[2],int toClient4[2],int toServer4[2],int toClient5[2],int toServer5[2],
-int toClient6[2],int toServer6[2]);
+int toClient6[2],int toServer6[2],int toClient7[2],int toServer7[2]);
 
 void* communicationThread(void* args);
 void* gameUpdateThread(void* args);

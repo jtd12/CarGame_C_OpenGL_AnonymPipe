@@ -9,6 +9,8 @@ int WINDOWSWIDTH= 960;
 int WINDOWSHEIGHT= 540;
 int centerX,centerY;
 int timer=0;
+int rotTeapot=0.0f;
+int finishedGame=0;
 // Fonction de mise à jour côté client
 
 pthread_mutex_t carMutex2 = PTHREAD_MUTEX_INITIALIZER;
@@ -17,6 +19,7 @@ pthread_mutex_t roueMutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t carAIMutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t roueAIMutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t timerMutex2 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t soundMutex2 = PTHREAD_MUTEX_INITIALIZER;
 
 void read_client()
 {
@@ -41,6 +44,10 @@ void read_client()
         // Traiter les données reçues pour la caméra
     }
       if (read(toClient6[0], &timer, sizeof(int)) > 0) {
+        // Traiter les données reçues pour la caméra
+    }
+    
+      if (read(toClient7[0], &sound, sizeof(Sound)) > 0) {
         // Traiter les données reçues pour la caméra
     }
 
@@ -92,6 +99,12 @@ char command = ' '; // Commande par défaut : Stop
         printf("Client : Commande envoyée à toServer6 : %c\n", command);
       pthread_mutex_unlock(&timerMutex2); 
       
+      
+         pthread_mutex_lock(&soundMutex2);
+    if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
+      pthread_mutex_unlock(&soundMutex2); 
+      
   
 
 }
@@ -101,21 +114,22 @@ void* gameUpdateThread2(void* args) {
 pthread_mutex_lock(&carMutex2);
   if (read(toClient[0], cars, sizeof(Car)) > 0)
   {
-     printf("Client : Position reçue : x = %.2f, z = %.2f\n", cars[0].x, cars[0].z);
+     printf("voiture : Position reçue : x = %.2f, z = %.2f\n", cars[0].x, cars[0].z);
      }
  pthread_mutex_unlock(&carMutex2);
  
      pthread_mutex_lock(&roueMutex2);
      if(read(toClient2[0], roues, sizeof(Roue) * 4) > 0)
             {
-               printf("Client : Position reçue : x = %.2f, z = %.2f\n", cars[0].x, cars[0].z);
+             for(int i=0;i<SIZEROUES;i++)
+               printf("roue : Position reçue : x = %.2f, z = %.2f\n", roues[i].x, roues[i].z);
             }
           pthread_mutex_unlock(&roueMutex2);   
             
                pthread_mutex_lock(&cameraMutex2);
             if( read(toClient3[0], &cam, sizeof(Camera)) > 0) {
             
-            printf("Client : Position reçue : x = %.2f, z = %.2f\n", cars[0].x, cars[0].z);
+            printf("camera : Position reçue : x = %.2f, z = %.2f\n", cam.x, cam.z);
         }
              pthread_mutex_unlock(&cameraMutex2);
              
@@ -124,7 +138,7 @@ pthread_mutex_lock(&carMutex2);
              if( read(toClient4[0], &carsAI, sizeof(Car)*10) > 0) {
             
             for(int i=0;i<SIZEAICAR;i++)
-              printf("Client : Position reçue : x = %.2f, z = %.2f\n", carsAI[i].x, carsAI[i].z);
+              printf("voitureAI : Position reçue : x = %.2f, z = %.2f\n", carsAI[i].x, carsAI[i].z);
          
              }
             pthread_mutex_unlock(&carAIMutex2); 
@@ -133,7 +147,7 @@ pthread_mutex_lock(&carMutex2);
             if( read(toClient5[0], &rouesAI, sizeof(Roue)*4) > 0) {
             
             for(int i=0;i<SIZEROUESAI;i++)
-              printf("Client : Position reçue : x = %.2f, z = %.2f\n", carsAI[i].x, carsAI[i].z);
+              printf("roueAI : Position reçue : x = %.2f, z = %.2f\n", rouesAI[i].x, rouesAI[i].z);
          
              }
             pthread_mutex_unlock(&roueAIMutex2); 
@@ -141,9 +155,16 @@ pthread_mutex_lock(&carMutex2);
             pthread_mutex_lock(&timerMutex2);
             if( read(toClient6[0], &timer, sizeof(int)) > 0) {
             
-         
+         printf("timer : Position reçue : timer = %2d", timer);
              }
             pthread_mutex_unlock(&timerMutex2); 
+            
+             pthread_mutex_lock(&soundMutex2);
+            if( read(toClient7[0], &sound, sizeof(Sound)) > 0) {
+             printf("sound : Position reçue : sound1 = %2d, sound2 = %2d", sound.sound1,sound.sound2);
+         
+             }
+            pthread_mutex_unlock(&soundMutex2); 
 }
 
 void updateClient() {
@@ -171,6 +192,7 @@ void updateClient() {
     pthread_mutex_destroy(&carAIMutex2);
     pthread_mutex_destroy(&roueAIMutex2);
     pthread_mutex_destroy(&timerMutex2);
+    pthread_mutex_destroy(&soundMutex2);
    
  //  glutTimerFunc(16, updateClient, 0); // Rappel pour le prochain frame
 }
@@ -415,7 +437,8 @@ void reshape(int w, int h) {
 
 // Fonction pour afficher la scène avec OpenGL
 void display() {
-
+   
+   rotTeapot+=1.5f;
    updateClient();
        // Transformation de la caméra
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
@@ -426,19 +449,14 @@ void display() {
               0.0, 0.0, 0.0, // Point regardé
               0.0, 1.0, 0.0); // Orientation "haut" de la caméra*/
     updateCamera(cars[0].x,cars[0].y,cars[0].z);
-              
-    glPushMatrix();
-    drawGrid();
-    glPopMatrix();
     
     glPushMatrix();
-    drawTrack();
-    drawPlane(175);
-    glScaled(0.5f,0.025f,0.5f);
-    drawCube();
-    glScaled(0.4,1,0.4);
-    drawCube();
+    drawCheckPoints(20, 5, 30,rotTeapot,0.2,0.3,0.8);
+    drawCheckPoints(40, 5, -40,rotTeapot,0.4,0.2,0.5);
+    drawCheckPoints(-40, 5, 30,rotTeapot,0.5,0.8,0.9);
     glPopMatrix();
+    
+    
     
     glPushMatrix();
     drawCity();
@@ -494,7 +512,21 @@ void display() {
     
     glPopMatrix();
     }
+   
      
+    glPushMatrix();
+    drawGrid();
+    glPopMatrix();
+    
+    glPushMatrix();
+    drawTrack();
+    drawPlane(175);
+    glScaled(0.5f,0.025f,0.5f);
+    drawCube();
+    glScaled(0.4,1,0.4);
+    drawCube();
+    glPopMatrix();
+    
      drawHud();
 
     glutPostRedisplay();
@@ -545,7 +577,18 @@ initialiseCar();
 initialiseCarsAI();
 initialiseTimer();
 
- 
+
+
+   sound.datas = NULL; // Dynamic array of Data structs
+   sound.datasCount = 0;
+   sound.context = NULL;
+   sound.device = NULL;
+   sound.isBigEndian = 0;
+   sound.sound1=loadSound("data/audio/vehicule.wav");
+   sound.sound2=loadSound("data/audio/background.wav");
+   playSound(sound.sound2);
+   playSoundLoop(sound.sound2);
+   
 generateTrack();
 }
 
@@ -600,7 +643,10 @@ void mouseMove(int mx,int my)
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
     if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+     if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
         
     read_client();
 
@@ -652,7 +698,10 @@ void mouseWheel(int button, int state, int x, int y) {
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
       if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+          if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
 
     read_client();
 
@@ -709,7 +758,10 @@ char command = ' '; // Commande par défaut : Stop
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
        if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+          if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
 	
 	read_client();
 
@@ -761,7 +813,10 @@ char command = ' '; // Commande par défaut : Stop
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
        if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+          if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
 
 
 	read_client();
@@ -790,7 +845,7 @@ void handleKeyPress(unsigned char key, int x, int y) {
        case 'd':
         command = 'D';
          break; // Haut
-        case 'q': 
+        case 27: 
         command = 'Q';
          break; // Quitter
         case 32:
@@ -819,7 +874,10 @@ void handleKeyPress(unsigned char key, int x, int y) {
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
        if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+          if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
      
      
       read_client();
@@ -833,7 +891,16 @@ void handleKeyPress(unsigned char key, int x, int y) {
         close(toClient2[1]); // Ferme l'écriture côté serveur
     	close(toServer2[0]); // Ferme la lecture côté serveur
     	close(toClient3[1]); // Ferme l'écriture côté serveur
-    	close(toServer3[0]); // Ferme la lecture côté serveur
+    	close(toServer3[0]); // Ferme la lecture côté serveur*
+    	close(toClient4[1]); // Ferme l'écriture côté serveur
+    	close(toServer4[0]); // Ferme la lecture côté serveur
+    	close(toClient5[1]); // Ferme l'écriture côté serveur
+    	close(toServer5[0]); // Ferme la lecture côté serveur
+    	close(toClient6[1]); // Ferme l'écriture côté serveur
+    	close(toServer6[0]); // Ferme la lecture côté serveur
+    	close(toClient7[1]); // Ferme l'écriture côté serveur
+    	close(toServer7[0]); // Ferme la lecture côté serveur
+    	freeSound();
         exit(0);
         }
 }
@@ -881,7 +948,10 @@ void handleKeyPressUp(unsigned char key, int x, int y) {
         printf("Client : Commande envoyée à toServer5 : %c\n", command);
         
         if (sendCommand_(toServer6[1], command))
-        printf("Client : Commande envoyée à toServer5 : %c\n", command);
+        printf("Client : Commande envoyée à toServer6 : %c\n", command);
+        
+          if (sendCommand_(toServer7[1], command))
+        printf("Client : Commande envoyée à toServer7 : %c\n", command);
 
       read_client();
 
@@ -895,7 +965,7 @@ void handleKeyPressUp(unsigned char key, int x, int y) {
 // Fonction principale pour le processus client
 void clientProcess(int toClient[2],int toServer[2],int toClient2[2],int toServer2[2],
 int toClient3[2],int toServer3[2],int toClient4[2],int toServer4[2],int toClient5[2],int toServer5[2],
-int toClient6[2],int toServer6[2]) {
+int toClient6[2],int toServer6[2],int toClient7[2],int toServer7[2]) {
     close(toClient[1]); // Ferme l'écriture côté serveur
     close(toServer[0]); // Ferme la lecture côté serveur
     close(toClient2[1]); // Ferme l'écriture côté serveur
@@ -908,13 +978,15 @@ int toClient6[2],int toServer6[2]) {
     close(toServer5[0]); // Ferme la lecture côté serveur
     close(toClient6[1]); // Ferme l'écriture côté serveur
     close(toServer6[0]); // Ferme la lecture côté serveur
+    close(toClient7[1]); // Ferme l'écriture côté serveur
+    close(toServer7[0]); // Ferme la lecture côté serveur
     // Initialisation de GLUT et OpenGL
     int argc = 1;
     char *argv[1] = {(char *)"race_game"};
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB| GLUT_DEPTH);
     glutInitWindowSize(WINDOWSWIDTH, WINDOWSHEIGHT);
-    glutCreateWindow("Car Game OpenGL - Tubes Anonymes!");
+    glutCreateWindow("Car Game OpenGL! - Tubes Anonymes!");
     init();
 	
     // Définition des callbacks

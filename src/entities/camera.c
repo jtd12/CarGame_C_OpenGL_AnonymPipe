@@ -16,7 +16,7 @@ void initialiseCamera()
 void lockCamera()
 {
   if (cam.camPitch > 1.25f) cam.camPitch = 1.25f;
-    if (cam.camPitch < -0.25f) cam.camPitch = -0.25f;
+    if (cam.camPitch < 0.0f) cam.camPitch = 0.0f;
 	
 	if(cam.camYaw<0.0)
 	  cam.camYaw+=360.0;

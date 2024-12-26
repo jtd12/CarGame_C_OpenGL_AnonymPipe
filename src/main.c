@@ -15,7 +15,8 @@ int main() {
     if (pipe(toClient) == -1 || pipe(toServer) == -1 || pipe(toClient2) == -1 || pipe(toServer2) == -1  ||
     pipe(toClient3) == -1 || pipe(toServer3) == -1 ||  pipe(toClient4) == -1 || pipe(toServer4) == -1 
     ||  pipe(toClient5) == -1 || pipe(toServer5) == -1 
-    || pipe(toClient6) == -1 || pipe(toServer6) == -1) {
+    || pipe(toClient6) == -1 || pipe(toServer6) == -1
+     || pipe(toClient7) == -1 || pipe(toServer7) == -1) {
         perror("Erreur lors de la création des tubes");
         exit(EXIT_FAILURE);
     }
@@ -29,10 +30,10 @@ int main() {
 
     if (pid == 0) {
         printf("Processus client démarré.\n");
-        clientProcess(toClient, toServer,toClient2, toServer2,toClient3, toServer3,toClient4, toServer4,toClient5, toServer5,toClient6, toServer6);
+        clientProcess(toClient, toServer,toClient2, toServer2,toClient3, toServer3,toClient4, toServer4,toClient5, toServer5,toClient6, toServer6,toClient7, toServer7);
     } else {
         printf("Processus serveur démarré.\n");
-        serverProcess(toClient, toServer,toClient2, toServer2,toClient3, toServer3,toClient4, toServer4,toClient5, toServer5,toClient6, toServer6);
+        serverProcess(toClient, toServer,toClient2, toServer2,toClient3, toServer3,toClient4, toServer4,toClient5, toServer5,toClient6, toServer6,toClient7, toServer7);
 
         // Attendre la fin du processus client
         wait(NULL);
